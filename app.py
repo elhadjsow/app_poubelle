@@ -1,3 +1,6 @@
+import os
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"]="0"
 import streamlit as st
 import os
 import gc
