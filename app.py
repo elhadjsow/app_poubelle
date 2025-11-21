@@ -2,7 +2,7 @@ import os
 import gc
 import tempfile
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw  # Correction de l'import
 import streamlit as st
 from ultralytics import YOLO
 
@@ -109,7 +109,8 @@ def predict_image_yolo(img_path):
         boxes = results[0].boxes
 
         if len(boxes) == 0:
-            del model; gc.collect()
+            del model
+            gc.collect()
             return None, "aucune détection", 0.0
 
         box = boxes[0]
@@ -119,7 +120,8 @@ def predict_image_yolo(img_path):
         label = "pleine" if label_id == 0 else "vide"
         box_tuple = (x1, y1, x2 - x1, y2 - y1)
 
-        del model; gc.collect()
+        del model
+        gc.collect()
         return box_tuple, label, score
     except Exception as e:
         st.error(f"Erreur YOLO : {e}")
@@ -141,19 +143,23 @@ with left:
     )
     st.markdown('</div></div>', unsafe_allow_html=True)
 
-    if uploaded_file:
+    if uploaded_file is not None:
         try:
             # Utiliser un fichier temporaire
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-                img = Image.open(uploaded_file).convert("RGB")
-                img.save(tmp_file.name)
+                # Ouvrir et traiter l'image
+                image = Image.open(uploaded_file).convert("RGB")
+                image.save(tmp_file.name)
                 img_path = tmp_file.name
 
-            st.image(img, caption="Image importée", use_column_width=True)
+            # Afficher l'image originale
+            st.image(image, caption="Image importée", use_column_width=True)
 
+            # Analyse avec YOLO
             with st.spinner("🔍 Analyse en cours..."):
                 box, pred, score = predict_image_yolo(img_path)
 
+            # Affichage des résultats
             st.markdown('<div class="result-box">', unsafe_allow_html=True)
             if pred == "aucune détection":
                 st.error("🚫 Aucune poubelle détectée !")
@@ -163,12 +169,21 @@ with left:
                 icon = "🟢" if pred == "pleine" else "🔵"
                 st.success(f"### {icon} Poubelle : {pred.capitalize()}\n**Confiance : {score:.2%}**")
 
-                # Annoter l'image
-                draw = ImageDraw.Draw(img)
-                x, y, w, h = box
-                draw.rectangle([x, y, x + w, y + h], outline="yellow", width=4)
-                st.image(img, caption="Résultat annoté", use_column_width=True)
+                # Annoter l'image si une boîte a été détectée
+                if box:
+                    draw = ImageDraw.Draw(image)
+                    x, y, w, h = box
+                    draw.rectangle([x, y, x + w, y + h], outline="yellow", width=4)
+                    st.image(image, caption="Résultat annoté", use_column_width=True)
+            
             st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Nettoyer le fichier temporaire
+            try:
+                os.unlink(img_path)
+            except:
+                pass
+                
         except Exception as e:
             st.error(f"Erreur traitement image : {e}")
 
@@ -177,7 +192,12 @@ with right:
     st.markdown("### 📥 Télécharger le modèle YOLO")
     if os.path.exists(DOWNLOAD_MODEL_PATH):
         with open(DOWNLOAD_MODEL_PATH, "rb") as f:
-            st.download_button("📦 Télécharger le modèle", data=f, file_name="poubelle_model.h5")
+            st.download_button(
+                "📦 Télécharger le modèle", 
+                data=f, 
+                file_name="poubelle_model.h5",
+                use_container_width=True
+            )
     else:
         st.error("Fichier du modèle introuvable.")
     st.markdown('</div>', unsafe_allow_html=True)
