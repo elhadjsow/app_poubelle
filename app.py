@@ -64,7 +64,7 @@ body, html, * { font-family: 'Inter', sans-serif !important; }
     padding: 2rem;
     border-radius: 20px;
     color: white;
-    box-shadow: 0px 10px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
 
 .styled-btn {
@@ -102,10 +102,10 @@ st.markdown("""
 # -------------------------------
 # FONCTION YOLO
 # -------------------------------
-def predict_image_yolo(img_array):
+def predict_image_yolo(img_path):
     try:
         model = YOLO(MODEL_PATH)
-        results = model(img_array)
+        results = model(img_path)
         boxes = results[0].boxes
 
         if len(boxes) == 0:
@@ -116,7 +116,6 @@ def predict_image_yolo(img_array):
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
         label_id = int(box.cls[0].item())
         score = float(box.conf[0].item())
-
         label = "pleine" if label_id == 0 else "vide"
         box_tuple = (x1, y1, x2 - x1, y2 - y1)
 
@@ -138,18 +137,22 @@ with left:
 
     uploaded_file = st.file_uploader(
         "Glissez-déposez ou sélectionnez une image",
-        type=['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
+        type=['jpg','jpeg','png','JPG','JPEG','PNG']
     )
     st.markdown('</div></div>', unsafe_allow_html=True)
 
     if uploaded_file:
         try:
-            img = Image.open(uploaded_file).convert("RGB")
-            img_array = np.array(img)
+            # Utiliser un fichier temporaire
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+                img = Image.open(uploaded_file).convert("RGB")
+                img.save(tmp_file.name)
+                img_path = tmp_file.name
+
             st.image(img, caption="Image importée", use_column_width=True)
 
             with st.spinner("🔍 Analyse en cours..."):
-                box, pred, score = predict_image_yolo(img_array)
+                box, pred, score = predict_image_yolo(img_path)
 
             st.markdown('<div class="result-box">', unsafe_allow_html=True)
             if pred == "aucune détection":
@@ -160,6 +163,7 @@ with left:
                 icon = "🟢" if pred == "pleine" else "🔵"
                 st.success(f"### {icon} Poubelle : {pred.capitalize()}\n**Confiance : {score:.2%}**")
 
+                # Annoter l'image
                 draw = ImageDraw.Draw(img)
                 x, y, w, h = box
                 draw.rectangle([x, y, x + w, y + h], outline="yellow", width=4)
