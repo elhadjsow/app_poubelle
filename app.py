@@ -5,8 +5,11 @@ import numpy as np
 import io
 import gc
 import os
+import urllib.request
+import tempfile
 
 MODEL_PATH = "model/poubelle_yolov8.pt"
+MODEL_URL = "https://your-model-url.com/poubelle_yolov8.pt"  # Remplacez par l'URL réelle de votre modèle
 
 # Configuration de la page
 st.set_page_config(
@@ -83,17 +86,68 @@ st.markdown("""
         border-radius: 25px;
         font-weight: bold;
     }
+    .download-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 0.5rem;
+    }
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #667eea, #764ba2);
     }
 </style>
 """, unsafe_allow_html=True)
 
+# Fonction pour télécharger le modèle
+def download_model():
+    """Télécharge le modèle YOLO depuis l'URL"""
+    try:
+        # Créer le dossier model s'il n'existe pas
+        os.makedirs("model", exist_ok=True)
+        
+        # Afficher la progression du téléchargement
+        progress_text = st.sidebar.info("📥 Téléchargement du modèle en cours...")
+        progress_bar = st.sidebar.progress(0)
+        
+        def update_progress(block_num, block_size, total_size):
+            progress = min(block_num * block_size / total_size, 1.0)
+            progress_bar.progress(progress)
+        
+        # Télécharger le modèle
+        urllib.request.urlretrieve(
+            MODEL_URL, 
+            MODEL_PATH,
+            reporthook=update_progress
+        )
+        
+        progress_bar.progress(1.0)
+        progress_text.empty()
+        st.sidebar.success("✅ Modèle téléchargé avec succès!")
+        return True
+        
+    except Exception as e:
+        st.sidebar.error(f"❌ Erreur lors du téléchargement: {e}")
+        return False
+
+# Fonction pour vérifier si le modèle existe
+def check_model_exists():
+    """Vérifie si le modèle existe localement"""
+    return os.path.exists(MODEL_PATH)
+
 # En-tête principal
 st.markdown('<h1 class="main-header">🗑️ SmartBin Detector</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Détection intelligente des poubelles par Intelligence Artificielle</p>', unsafe_allow_html=True)
 
-# Sidebar avec informations
+# Sidebar avec informations et gestion du modèle
 with st.sidebar:
     st.markdown("### 📊 À propos")
     st.info("""
@@ -106,6 +160,33 @@ with st.sidebar:
     - 🖼️ Visualisation des résultats
     """)
     
+    st.markdown("### 🛠️ Gestion du modèle")
+    
+    # Vérifier l'état du modèle
+    model_exists = check_model_exists()
+    
+    if model_exists:
+        st.success("✅ Modèle disponible")
+        model_size = os.path.getsize(MODEL_PATH) / (1024 * 1024)  # Taille en MB
+        st.metric("Taille du modèle", f"{model_size:.1f} MB")
+        
+        # Bouton pour retélécharger le modèle
+        if st.button("🔄 Retélécharger le modèle", use_container_width=True):
+            if download_model():
+                st.rerun()
+    else:
+        st.error("❌ Modèle non trouvé")
+        st.markdown("""
+        Le modèle YOLO n'est pas disponible localement.
+        Cliquez sur le bouton ci-dessous pour le télécharger.
+        """)
+        
+        # Bouton pour télécharger le modèle
+        if st.button("📥 Télécharger le modèle", use_container_width=True, type="primary"):
+            if download_model():
+                st.rerun()
+    
+    st.markdown("---")
     st.markdown("### 📈 Statistiques")
     col1, col2 = st.columns(2)
     with col1:
@@ -114,23 +195,32 @@ with st.sidebar:
         st.metric("Temps réponse", "<2s")
     
     st.markdown("---")
-    st.markdown("### 🛠️ Support")
-    st.caption("Problèmes techniques ? Contactez notre équipe de support.")
+    st.markdown("### ℹ️ Instructions")
+    st.caption("1. Téléchargez le modèle si nécessaire")
+    st.caption("2. Importez une image contenant une poubelle")
+    st.caption("3. Obtenez l'analyse automatique")
 
 # Zone de téléchargement stylisée
 st.markdown('<div class="upload-container">', unsafe_allow_html=True)
 st.markdown("### 📤 Importez votre image")
 st.markdown("Glissez-déposez ou sélectionnez une image contenant une poubelle")
-uploaded_file = st.file_uploader(
-    "",
-    type=['jpg', 'jpeg', 'png'],
-    accept_multiple_files=False,
-    label_visibility="collapsed"
-)
+
+# Vérifier si le modèle est disponible avant d'autoriser l'upload
+if not check_model_exists():
+    st.warning("⚠️ Veuillez d'abord télécharger le modèle dans la sidebar")
+    uploaded_file = None
+else:
+    uploaded_file = st.file_uploader(
+        "",
+        type=['jpg', 'jpeg', 'png'],
+        accept_multiple_files=False,
+        label_visibility="collapsed"
+    )
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Traitement de l'image
-if uploaded_file is not None:
+if uploaded_file is not None and check_model_exists():
     # Section informations fichier
     col1, col2 = st.columns(2)
     with col1:
@@ -258,6 +348,10 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Erreur lors du traitement de l'image : {e}")
 
+elif uploaded_file is not None and not check_model_exists():
+    st.error("❌ Impossible de traiter l'image : le modèle n'est pas disponible")
+    st.info("📥 Veuillez télécharger le modèle depuis la sidebar pour continuer")
+
 # Footer
 st.markdown("---")
 st.markdown(
@@ -266,3 +360,11 @@ st.markdown(
     "</div>", 
     unsafe_allow_html=True
 )
+
+# Section de débogage (optionnelle - peut être commentée en production)
+with st.expander("🔧 Informations de débogage", expanded=False):
+    st.write("**État du modèle :**", "✅ Disponible" if check_model_exists() else "❌ Non disponible")
+    st.write("**Chemin du modèle :**", MODEL_PATH)
+    if check_model_exists():
+        model_size = os.path.getsize(MODEL_PATH) / (1024 * 1024)
+        st.write(f"**Taille du modèle :** {model_size:.2f} MB")
