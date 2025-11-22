@@ -2,7 +2,7 @@ import os
 import gc
 import tempfile
 import numpy as np
-from PIL import Image, ImageDraw  # Correction de l'import
+from PIL import Image, ImageDraw
 import streamlit as st
 from ultralytics import YOLO
 
@@ -139,42 +139,63 @@ with left:
 
     uploaded_file = st.file_uploader(
         "Glissez-déposez ou sélectionnez une image",
-        type=['jpg','jpeg','png','JPG','JPEG','PNG']
+        type=['jpg','jpeg','png','JPG','JPEG','PNG'],
+        key="file_uploader"
     )
+    
+    # Debug info
+    if uploaded_file is not None:
+        st.write(f"📄 Fichier sélectionné : {uploaded_file.name}")
+        st.write(f"📏 Taille : {uploaded_file.size} bytes")
+        st.write(f"🔍 Type : {uploaded_file.type}")
+    
     st.markdown('</div></div>', unsafe_allow_html=True)
 
     if uploaded_file is not None:
         try:
-            # Utiliser un fichier temporaire
+            # Debug : afficher les informations du fichier
+            st.info("🔄 Traitement de l'image en cours...")
+            
+            # Lire l'image directement depuis le fichier uploadé
+            image = Image.open(uploaded_file).convert("RGB")
+            
+            # Afficher l'image originale immédiatement
+            st.subheader("🖼️ Image importée")
+            st.image(image, use_column_width=True)
+            
+            # Sauvegarder dans un fichier temporaire pour YOLO
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-                # Ouvrir et traiter l'image
-                image = Image.open(uploaded_file).convert("RGB")
-                image.save(tmp_file.name)
+                image.save(tmp_file.name, format="JPEG")
                 img_path = tmp_file.name
 
-            # Afficher l'image originale
-            st.image(image, caption="Image importée", use_column_width=True)
-
             # Analyse avec YOLO
-            with st.spinner("🔍 Analyse en cours..."):
+            with st.spinner("🔍 Analyse YOLO en cours..."):
                 box, pred, score = predict_image_yolo(img_path)
 
             # Affichage des résultats
             st.markdown('<div class="result-box">', unsafe_allow_html=True)
+            st.subheader("📊 Résultats de l'analyse")
+            
             if pred == "aucune détection":
                 st.error("🚫 Aucune poubelle détectée !")
             elif pred == "erreur":
                 st.error("❌ Une erreur est survenue lors de la détection.")
             else:
                 icon = "🟢" if pred == "pleine" else "🔵"
-                st.success(f"### {icon} Poubelle : {pred.capitalize()}\n**Confiance : {score:.2%}**")
+                st.success(f"### {icon} Poubelle : {pred.capitalize()}")
+                st.info(f"**Niveau de confiance : {score:.2%}**")
 
                 # Annoter l'image si une boîte a été détectée
                 if box:
-                    draw = ImageDraw.Draw(image)
+                    st.subheader("🎯 Image annotée")
+                    annotated_image = image.copy()
+                    draw = ImageDraw.Draw(annotated_image)
                     x, y, w, h = box
+                    # Dessiner le rectangle de détection
                     draw.rectangle([x, y, x + w, y + h], outline="yellow", width=4)
-                    st.image(image, caption="Résultat annoté", use_column_width=True)
+                    # Ajouter le label
+                    draw.text((x, y-25), f"{pred} ({score:.2%})", fill="yellow")
+                    st.image(annotated_image, use_column_width=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -185,21 +206,38 @@ with left:
                 pass
                 
         except Exception as e:
-            st.error(f"Erreur traitement image : {e}")
+            st.error(f"❌ Erreur lors du traitement de l'image : {str(e)}")
+            st.info("💡 Essayez avec une autre image ou vérifiez le format du fichier.")
 
 with right:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### 📥 Télécharger le modèle YOLO")
+    
+    # Vérifier si le modèle existe
     if os.path.exists(DOWNLOAD_MODEL_PATH):
+        st.success("✅ Modèle disponible")
         with open(DOWNLOAD_MODEL_PATH, "rb") as f:
             st.download_button(
-                "📦 Télécharger le modèle", 
+                "📦 Télécharger le modèle YOLO", 
                 data=f, 
                 file_name="poubelle_model.h5",
                 use_container_width=True
             )
     else:
-        st.error("Fichier du modèle introuvable.")
+        st.error("❌ Fichier du modèle introuvable.")
+        st.info("💡 Vérifiez que le fichier existe dans le dossier 'model/'")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Section d'instructions
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown("### 📋 Instructions")
+    st.markdown("""
+    1. **Sélectionnez une image** contenant une poubelle
+    2. **Attendez l'analyse** automatique par YOLOv8
+    3. **Visualisez les résultats** avec la détection
+    4. **Téléchargez** l'image annotée si nécessaire
+    """)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------
