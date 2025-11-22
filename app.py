@@ -9,7 +9,7 @@ import urllib.request
 import tempfile
 
 MODEL_PATH = "model/poubelle_yolov8.pt"
-MODEL_URL = "https://your-model-url.com/poubelle_yolov8.pt"  # Remplacez par l'URL réelle de votre modèle
+MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt"  # Exemple d'URL
 
 # Configuration de la page
 st.set_page_config(
@@ -96,6 +96,7 @@ st.markdown("""
         cursor: pointer;
         transition: all 0.3s ease;
         margin: 0.5rem;
+        width: 100%;
     }
     .download-btn:hover {
         transform: translateY(-2px);
@@ -103,6 +104,22 @@ st.markdown("""
     }
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    .model-status {
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        margin: 10px 0;
+    }
+    .model-available {
+        background: rgba(29, 209, 161, 0.2);
+        border: 2px solid #1dd1a1;
+        color: #1dd1a1;
+    }
+    .model-missing {
+        background: rgba(255, 107, 107, 0.2);
+        border: 2px solid #ff6b6b;
+        color: #ff6b6b;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -119,8 +136,9 @@ def download_model():
         progress_bar = st.sidebar.progress(0)
         
         def update_progress(block_num, block_size, total_size):
-            progress = min(block_num * block_size / total_size, 1.0)
-            progress_bar.progress(progress)
+            if total_size > 0:
+                progress = min(block_num * block_size / total_size, 1.0)
+                progress_bar.progress(progress)
         
         # Télécharger le modèle
         urllib.request.urlretrieve(
@@ -165,24 +183,30 @@ with st.sidebar:
     # Vérifier l'état du modèle
     model_exists = check_model_exists()
     
+    # Afficher le statut du modèle
     if model_exists:
-        st.success("✅ Modèle disponible")
         model_size = os.path.getsize(MODEL_PATH) / (1024 * 1024)  # Taille en MB
-        st.metric("Taille du modèle", f"{model_size:.1f} MB")
+        st.markdown(f'<div class="model-status model-available">✅ Modèle disponible ({model_size:.1f} MB)</div>', unsafe_allow_html=True)
         
         # Bouton pour retélécharger le modèle
-        if st.button("🔄 Retélécharger le modèle", use_container_width=True):
+        if st.button("🔄 Retélécharger le modèle", 
+                    use_container_width=True, 
+                    key="redownload_btn"):
             if download_model():
                 st.rerun()
+                
     else:
-        st.error("❌ Modèle non trouvé")
+        st.markdown('<div class="model-status model-missing">❌ Modèle non trouvé</div>', unsafe_allow_html=True)
         st.markdown("""
         Le modèle YOLO n'est pas disponible localement.
         Cliquez sur le bouton ci-dessous pour le télécharger.
         """)
         
-        # Bouton pour télécharger le modèle
-        if st.button("📥 Télécharger le modèle", use_container_width=True, type="primary"):
+        # Bouton principal pour télécharger le modèle
+        if st.button("📥 Télécharger le modèle YOLO", 
+                    use_container_width=True, 
+                    type="primary",
+                    key="download_btn"):
             if download_model():
                 st.rerun()
     
@@ -200,6 +224,30 @@ with st.sidebar:
     st.caption("2. Importez une image contenant une poubelle")
     st.caption("3. Obtenez l'analyse automatique")
 
+# Section principale avec bouton de téléchargement visible
+st.markdown("### 🚀 Premiers pas")
+
+# Afficher un message important si le modèle n'est pas disponible
+if not check_model_exists():
+    st.error("⚠️ **Attention : Le modèle IA n'est pas disponible**")
+    st.markdown("""
+    Pour utiliser l'application, vous devez d'abord télécharger le modèle de détection.
+    
+    **Options :**
+    1. **Téléchargement automatique** - Cliquez sur le bouton dans la sidebar
+    2. **Téléchargement manuel** - Ou utilisez le bouton ci-dessous
+    """)
+    
+    # Bouton de téléchargement principal visible
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("📥 TÉLÉCHARGER LE MODÈLE YOLO", 
+                    use_container_width=True, 
+                    type="primary",
+                    key="main_download_btn"):
+            if download_model():
+                st.rerun()
+
 # Zone de téléchargement stylisée
 st.markdown('<div class="upload-container">', unsafe_allow_html=True)
 st.markdown("### 📤 Importez votre image")
@@ -207,7 +255,7 @@ st.markdown("Glissez-déposez ou sélectionnez une image contenant une poubelle"
 
 # Vérifier si le modèle est disponible avant d'autoriser l'upload
 if not check_model_exists():
-    st.warning("⚠️ Veuillez d'abord télécharger le modèle dans la sidebar")
+    st.warning("⏳ Veuillez d'abord télécharger le modèle pour activer la détection")
     uploaded_file = None
 else:
     uploaded_file = st.file_uploader(
@@ -360,11 +408,3 @@ st.markdown(
     "</div>", 
     unsafe_allow_html=True
 )
-
-# Section de débogage (optionnelle - peut être commentée en production)
-with st.expander("🔧 Informations de débogage", expanded=False):
-    st.write("**État du modèle :**", "✅ Disponible" if check_model_exists() else "❌ Non disponible")
-    st.write("**Chemin du modèle :**", MODEL_PATH)
-    if check_model_exists():
-        model_size = os.path.getsize(MODEL_PATH) / (1024 * 1024)
-        st.write(f"**Taille du modèle :** {model_size:.2f} MB")
