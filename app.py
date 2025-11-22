@@ -1,6 +1,5 @@
 import os
 import gc
-import tempfile
 import numpy as np
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -42,16 +41,6 @@ body, html, * { font-family: 'Inter', sans-serif !important; }
 .header-title { font-size: 3rem; font-weight: 700; letter-spacing: -1px; }
 .header-sub { font-size: 1.2rem; opacity: 0.9; }
 
-.upload-zone {
-    border: 3px dashed #4b6cb7;
-    padding: 2.5rem;
-    border-radius: 20px;
-    background: #f5f7ff;
-    transition: 0.3s;
-    text-align: center;
-}
-.upload-zone:hover { background: #e9ecff; border-color: #182848; }
-
 .card {
     background: white;
     padding: 1.8rem;
@@ -87,6 +76,17 @@ body, html, * { font-family: 'Inter', sans-serif !important; }
 }
 
 .footer { text-align: center; padding: 2rem; color: #777; }
+
+div[data-baseweb="file-uploader"] {
+    border: 3px dashed #4b6cb7 !important;
+    border-radius: 20px !important;
+    padding: 2rem !important;
+    background: #f5f7ff !important;
+    transition: 0.3s;
+}
+div[data-baseweb="file-uploader"]:hover {
+    background: #e9ecff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,13 +135,12 @@ left, right = st.columns([1.3, 1])
 with left:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown("### 📤 Upload d'image pour analyse")
-    st.markdown('<div class="upload-zone">', unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
         "Glissez-déposez ou sélectionnez une image",
-        type=['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG']
+        type=['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'],
+        key="uploader"
     )
-    st.markdown('</div></div>', unsafe_allow_html=True)
 
     if uploaded_file:
         try:
@@ -175,6 +174,7 @@ with left:
             st.markdown('</div>', unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Erreur traitement image : {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with right:
     st.markdown('<div class="card">', unsafe_allow_html=True)
