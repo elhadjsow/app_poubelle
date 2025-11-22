@@ -227,11 +227,13 @@ st.markdown('</div>', unsafe_allow_html=True)
 if uploaded_file and check_model_exists():
     uploaded_file.seek(0)
     img = Image.open(uploaded_file).convert("RGB")
-    img.thumbnail((1024,1024))
-    img_array = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    st.image(img, use_container_width=True, caption="Image originale")
+    # Taille d'affichage plus professionnelle
+    display_size = (400, 400)
+    img_display = img.copy()
+    img_display.thumbnail(display_size)
+    st.image(img_display, use_container_width=False, caption="Image originale", width=350)
     with st.spinner("🔍 Analyse en cours..."):
-        box, pred, score = predict_image_yolo(img_array)
+        box, pred, score = predict_image_yolo(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
     st.markdown('<div class="result-card">', unsafe_allow_html=True)
     if pred=="aucune détection":
         st.error("🚫 Aucune poubelle détectée")
@@ -241,11 +243,14 @@ if uploaded_file and check_model_exists():
         badge_color = "full-badge" if pred=="pleine" else "empty-badge"
         st.markdown(f'<div class="{badge_color}">🗑️ Poubelle {pred.upper()}</div>', unsafe_allow_html=True)
         st.metric("Score de confiance", f"{score:.2%}")
-        draw = ImageDraw.Draw(img)
-        x,y,w,h = box
+        # Dessin de la box sur une copie réduite
+        img_annot = img.copy()
+        img_annot.thumbnail(display_size)
+        draw = ImageDraw.Draw(img_annot)
+        x, y, w, h = box
         color = "#FF4500" if pred=="pleine" else "#00CED1"
-        draw.rectangle([x,y,x+w,y+h], outline=color, width=6)
-        st.image(img, use_container_width=True, caption=f"Poubelle {pred} (confiance: {score:.2%})")
+        draw.rectangle([x, y, x + w, y + h], outline=color, width=4)
+        st.image(img_annot, use_container_width=False, caption=f"Poubelle {pred} (confiance: {score:.2%})", width=350)
     st.markdown('</div>', unsafe_allow_html=True)
 elif uploaded_file and not check_model_exists():
     st.error("❌ Impossible de traiter l'image : le modèle n'est pas disponible")
