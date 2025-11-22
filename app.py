@@ -228,21 +228,24 @@ if uploaded_file and check_model_exists():
     uploaded_file.seek(0)
     img = Image.open(uploaded_file).convert("RGB")
     # Taille d'affichage plus professionnelle
-    display_size = (400, 400)
+    display_size = (350, 350)
     img_display = img.copy()
     img_display.thumbnail(display_size)
-    st.image(img_display, use_container_width=False, caption="Image originale", width=350)
+    st.markdown('<div style="display:flex; justify-content:center; align-items:center; margin-bottom:1rem;">', unsafe_allow_html=True)
+    st.image(img_display, caption="Image originale", width=320, use_column_width=False)
+    st.markdown('</div>', unsafe_allow_html=True)
     with st.spinner("🔍 Analyse en cours..."):
         box, pred, score = predict_image_yolo(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
-    st.markdown('<div class="result-card">', unsafe_allow_html=True)
+    st.markdown('<div class="result-card" style="background: linear-gradient(135deg, #eaf6ff 0%, #f8fbff 100%); box-shadow: 0 8px 32px rgba(106,90,205,0.10);">', unsafe_allow_html=True)
     if pred=="aucune détection":
         st.error("🚫 Aucune poubelle détectée")
     elif pred=="erreur":
         st.error("❌ Erreur de détection")
     else:
         badge_color = "full-badge" if pred=="pleine" else "empty-badge"
-        st.markdown(f'<div class="{badge_color}">🗑️ Poubelle {pred.upper()}</div>', unsafe_allow_html=True)
-        st.metric("Score de confiance", f"{score:.2%}")
+        st.markdown(f'<div class="{badge_color}" style="font-size:1.2rem; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.08);">🗑️ Poubelle {pred.upper()}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:1.1rem; color:#4682B4; margin-bottom:0.5rem;">Score de confiance</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:2.2rem; font-weight:700; color:#1E90FF; margin-bottom:1rem;">{score:.2%}</div>', unsafe_allow_html=True)
         # Dessin de la box sur une copie réduite
         img_annot = img.copy()
         img_annot.thumbnail(display_size)
@@ -250,7 +253,9 @@ if uploaded_file and check_model_exists():
         x, y, w, h = box
         color = "#FF4500" if pred=="pleine" else "#00CED1"
         draw.rectangle([x, y, x + w, y + h], outline=color, width=4)
-        st.image(img_annot, use_container_width=False, caption=f"Poubelle {pred} (confiance: {score:.2%})", width=350)
+        st.markdown('<div style="display:flex; justify-content:center; align-items:center;">', unsafe_allow_html=True)
+        st.image(img_annot, caption=f"Poubelle {pred} (confiance: {score:.2%})", width=320, use_column_width=False)
+        st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 elif uploaded_file and not check_model_exists():
     st.error("❌ Impossible de traiter l'image : le modèle n'est pas disponible")
