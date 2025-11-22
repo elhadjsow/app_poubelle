@@ -21,76 +21,78 @@ st.set_page_config(
 )
 
 # -------------------------------
-# CSS DESIGN BLEU MODERNE
+# CSS DESIGN MODERNE BLEU
 # -------------------------------
 st.markdown("""
 <style>
-body {
-    background: linear-gradient(135deg, #f8fbff 0%, #eaf6ff 100%) !important;
-}
-/* TITRES */
+/* HEADER */
 .main-header {
     font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #1E90FF 0%, #6A5ACD 100%);
+    font-weight: 900;
+    background: linear-gradient(135deg, #1E90FF 0%, #00BFFF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-align: center;
     margin-bottom: 1rem;
-    letter-spacing: -2px;
-    text-shadow: 0 2px 12px #eaf6ff;
-    animation: fadein 1.2s;
-}
-@keyframes fadein {
-    from { opacity: 0; transform: translateY(-30px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 .sub-header {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: #4682B4;
     text-align: center;
     margin-bottom: 2rem;
-    opacity: 0.85;
 }
+
+/* UPLOAD */
 .upload-container {
     border: 2px dashed #1E90FF;
     border-radius: 25px;
     padding: 3rem;
     text-align: center;
-    background: rgba(30, 144, 255, 0.07);
+    background: rgba(30, 144, 255, 0.05);
     margin: 2rem 0;
+    box-shadow: 0 10px 30px rgba(30,144,255,0.1);
     transition: all 0.3s ease;
-    box-shadow: 0 8px 32px rgba(106,90,205,0.08);
-    animation: fadein 1.2s;
 }
 .upload-container:hover {
     background: rgba(30, 144, 255, 0.15);
-    border-color: #6A5ACD;
+    border-color: #00BFFF;
 }
+
+/* RESULT CARD */
 .result-card {
-    background: white;
-    border-radius: 20px;
+    background: linear-gradient(145deg, #f0f8ff 0%, #e6f0ff 100%);
+    border-radius: 25px;
     padding: 2rem;
-    box-shadow: 0 12px 25px rgba(0,0,0,0.10);
     margin: 1rem 0;
-    border-left: 6px solid #1E90FF;
-    animation: fadein 1.2s;
+    border-left: 8px solid #1E90FF;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+.result-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+}
+
+/* CONFIDENCE BAR */
 .confidence-bar {
     height: 12px;
-    background: linear-gradient(90deg, #1E90FF, #4682B4, #6A5ACD);
+    background: linear-gradient(90deg, #1E90FF, #00BFFF, #4682B4);
     border-radius: 10px;
     margin: 10px 0;
 }
+
+/* STAT CARD */
 .stat-card {
-    background: linear-gradient(135deg, #1E90FF 0%, #6A5ACD 100%);
+    background: linear-gradient(135deg, #1E90FF 0%, #4682B4 100%);
     color: white;
     border-radius: 20px;
     padding: 1.5rem;
     text-align: center;
     margin: 0.5rem;
-    box-shadow: 0 4px 16px rgba(30,144,255,0.10);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
 }
+
+/* BADGES */
 .full-badge {
     background: linear-gradient(135deg, #FF4500 0%, #FF6347 100%);
     color: white;
@@ -98,7 +100,7 @@ body {
     border-radius: 25px;
     font-weight: bold;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(255,99,71,0.10);
+    box-shadow: 0 5px 15px rgba(255,69,0,0.3);
 }
 .empty-badge {
     background: linear-gradient(135deg, #00CED1 0%, #20B2AA 100%);
@@ -107,10 +109,12 @@ body {
     border-radius: 25px;
     font-weight: bold;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(32,178,170,0.10);
+    box-shadow: 0 5px 15px rgba(0,206,209,0.3);
 }
+
+/* BOUTONS */
 .download-btn {
-    background: linear-gradient(135deg, #1E90FF 0%, #6A5ACD 100%);
+    background: linear-gradient(135deg, #1E90FF 0%, #4682B4 100%);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -120,19 +124,17 @@ body {
     transition: all 0.3s ease;
     margin: 0.5rem 0;
     width: 100%;
-    box-shadow: 0 2px 12px rgba(30,144,255,0.10);
 }
 .download-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30,144,255,0.18);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(30,144,255,0.5);
 }
+
+/* FOOTER */
 .footer {
-    text-align: center;
-    color: #4682B4;
-    padding: 2rem;
-    font-size: 1.1rem;
-    opacity: 0.8;
-    background: none;
+    text-align:center;
+    color:#4682B4;
+    margin-top:2rem;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -251,5 +253,4 @@ elif uploaded_file and not check_model_exists():
 # -------------------------------
 # FOOTER
 # -------------------------------
-st.markdown("---")
-st.markdown("<div style='text-align:center; color:#4682B4;'>🚀 Propulsé par YOLOv8 | SmartBin Detector v1.0</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer'>🚀 Propulsé par YOLOv8 | SmartBin Detector v1.0</div>", unsafe_allow_html=True)
