@@ -3,7 +3,6 @@ from ultralytics import YOLO
 from PIL import Image, ImageDraw
 import numpy as np
 import cv2
-import gc
 import os
 
 # -------------------------------
@@ -24,13 +23,17 @@ st.set_page_config(
 def check_model_exists():
     return os.path.exists(MODEL_PATH)
 
-def predict_image_yolo(img_array):
+@st.cache_resource
+def load_model(path):
+    """Charge le modèle YOLO une seule fois et le garde en mémoire."""
+    return YOLO(path)
+
+def predict_image_yolo(img_array, model):
+    """Prédit l'état de la poubelle sur l'image passée."""
     try:
-        model = YOLO(MODEL_PATH)
         results = model(img_array)
         boxes = results[0].boxes
         if len(boxes) == 0:
-            del model; gc.collect()
             return None, "aucune détection", 0.0
         box = boxes[0]
         x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
@@ -38,7 +41,6 @@ def predict_image_yolo(img_array):
         score = float(box.conf[0].item())
         label = "pleine" if label_id == 0 else "vide"
         box_tuple = (x1, y1, x2 - x1, y2 - y1)
-        del model; gc.collect()
         return box_tuple, label, score
     except Exception as e:
         st.error(f"Erreur YOLO : {e}")
@@ -52,7 +54,6 @@ with st.sidebar:
     
     if check_model_exists():
         st.success("✅ Modèle disponible")
-        # Bouton pour télécharger le modèle
         with open(MODEL_PATH, "rb") as f:
             st.download_button(
                 label="📥 Télécharger le modèle",
@@ -77,6 +78,7 @@ if not check_model_exists():
     uploaded_file = None
 else:
     uploaded_file = st.file_uploader("📤 Importez votre image", type=['jpg','jpeg','png'])
+    model = load_model(MODEL_PATH)  # modèle chargé une seule fois
 
 # -------------------------------
 # TRAITEMENT ET AFFICHAGE
@@ -84,15 +86,20 @@ else:
 if uploaded_file and check_model_exists():
     img = Image.open(uploaded_file).convert("RGB")
     col1, col2 = st.columns(2)
-    
+
+    # Image originale
     with col1:
         st.image(img, caption="Image originale", use_container_width=True)
-    
-    with st.spinner("🔍 Analyse en cours..."):
-        box, pred, score = predict_image_yolo(cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR))
-    
+
+    # Prédiction
     with col2:
         st.subheader("Résultat")
+        with st.spinner("🔍 Analyse en cours..."):
+            box, pred, score = predict_image_yolo(
+                cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR),
+                model
+            )
+
         if pred == "aucune détection":
             st.error("🚫 Aucune poubelle détectée")
         elif pred == "erreur":
@@ -100,8 +107,8 @@ if uploaded_file and check_model_exists():
         else:
             badge_text = "🗑️ POUBELLE PLEINE" if pred == "pleine" else "🗑️ POUBELLE VIDE"
             st.success(f"{badge_text} - Confiance: {score:.1%}")
-            
-            # Affichage image annotée
+
+            # Image annotée
             img_annot = img.copy()
             draw = ImageDraw.Draw(img_annot)
             x, y, w, h = box
