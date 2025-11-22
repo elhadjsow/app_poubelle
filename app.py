@@ -25,6 +25,9 @@ st.set_page_config(
 # -------------------------------
 st.markdown("""
 <style>
+body {
+    background: linear-gradient(135deg, #f8fbff 0%, #eaf6ff 100%) !important;
+}
 /* TITRES */
 .main-header {
     font-size: 3rem;
@@ -34,48 +37,51 @@ st.markdown("""
     -webkit-text-fill-color: transparent;
     text-align: center;
     margin-bottom: 1rem;
+    letter-spacing: -2px;
+    text-shadow: 0 2px 12px #eaf6ff;
+    animation: fadein 1.2s;
+}
+@keyframes fadein {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 .sub-header {
     font-size: 1.2rem;
     color: #4682B4;
     text-align: center;
     margin-bottom: 2rem;
+    opacity: 0.85;
 }
-
-/* UPLOAD */
 .upload-container {
     border: 2px dashed #1E90FF;
     border-radius: 25px;
     padding: 3rem;
     text-align: center;
-    background: rgba(30, 144, 255, 0.05);
+    background: rgba(30, 144, 255, 0.07);
     margin: 2rem 0;
     transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(106,90,205,0.08);
+    animation: fadein 1.2s;
 }
 .upload-container:hover {
     background: rgba(30, 144, 255, 0.15);
     border-color: #6A5ACD;
 }
-
-/* CARTE RESULTAT */
 .result-card {
     background: white;
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.10);
     margin: 1rem 0;
     border-left: 6px solid #1E90FF;
+    animation: fadein 1.2s;
 }
-
-/* BARRE DE CONFIANCE */
 .confidence-bar {
     height: 12px;
     background: linear-gradient(90deg, #1E90FF, #4682B4, #6A5ACD);
     border-radius: 10px;
     margin: 10px 0;
 }
-
-/* STAT CARD */
 .stat-card {
     background: linear-gradient(135deg, #1E90FF 0%, #6A5ACD 100%);
     color: white;
@@ -83,9 +89,8 @@ st.markdown("""
     padding: 1.5rem;
     text-align: center;
     margin: 0.5rem;
+    box-shadow: 0 4px 16px rgba(30,144,255,0.10);
 }
-
-/* BADGES */
 .full-badge {
     background: linear-gradient(135deg, #FF4500 0%, #FF6347 100%);
     color: white;
@@ -93,6 +98,7 @@ st.markdown("""
     border-radius: 25px;
     font-weight: bold;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(255,99,71,0.10);
 }
 .empty-badge {
     background: linear-gradient(135deg, #00CED1 0%, #20B2AA 100%);
@@ -101,9 +107,8 @@ st.markdown("""
     border-radius: 25px;
     font-weight: bold;
     text-align: center;
+    box-shadow: 0 2px 8px rgba(32,178,170,0.10);
 }
-
-/* BOUTONS */
 .download-btn {
     background: linear-gradient(135deg, #1E90FF 0%, #6A5ACD 100%);
     color: white;
@@ -115,10 +120,19 @@ st.markdown("""
     transition: all 0.3s ease;
     margin: 0.5rem 0;
     width: 100%;
+    box-shadow: 0 2px 12px rgba(30,144,255,0.10);
 }
 .download-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(30,144,255,0.5);
+    box-shadow: 0 6px 20px rgba(30,144,255,0.18);
+}
+.footer {
+    text-align: center;
+    color: #4682B4;
+    padding: 2rem;
+    font-size: 1.1rem;
+    opacity: 0.8;
+    background: none;
 }
 </style>
 """, unsafe_allow_html=True)
